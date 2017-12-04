@@ -6,9 +6,9 @@ const privates : WeakMap<Function, {
 }> = new WeakMap()
 
 function create(next : Promise<JSHandle>, context: Promise<JSHandle> = Promise.resolve(null)) {
-    const fn = () => {}
-    privates.set(fn, {context, next})
-    return fn
+    const fakeFunction = new Function
+    privates.set(fakeFunction, {context, next})
+    return fakeFunction
 }
 
 const handler : ProxyHandler<Function> = {
