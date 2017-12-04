@@ -24,9 +24,9 @@ describe('puppeteer-handle', () => {
     })
 
     it('should enable arguments', async() => {
-        const handle = await this.page.evaluateHandle(() => ({a: {val: 2, b: function(add) { return this.val + add; }}}))
+        const handle = await this.page.evaluateHandle(() => ({add: (a, b) => a + b}))
         const pHandle = createHandle(handle)
-        expect(await pHandle.a.b(3)).to.equal(5)        
+        expect(await pHandle.add(1, 4)).to.equal(5)        
     })
 
 
