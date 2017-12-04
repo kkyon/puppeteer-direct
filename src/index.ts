@@ -1,23 +1,22 @@
 import {JSHandle} from 'puppeteer'
+type FutureHandle = Promise<JSHandle>
+type PuppeteerHandleWrapper = Function
 
-const privates : WeakMap<Function, {
-    context: Promise<JSHandle>
-    next: Promise<JSHandle>
-}> = new WeakMap()
+const privates = new WeakMap<PuppeteerHandleWrapper, {context: FutureHandle, next: FutureHandle}>()
 
-function create(next : Promise<JSHandle>, context: Promise<JSHandle> = Promise.resolve(null)) {
-    const fakeFunction = new Function
+function create(next : FutureHandle, context: FutureHandle = Promise.resolve(null)) {
+    const fakeFunction : PuppeteerHandleWrapper = () => {}
     privates.set(fakeFunction, {context, next})
     return fakeFunction
 }
 
-const handler : ProxyHandler<Function> = {
+const handler : ProxyHandler<PuppeteerHandleWrapper> = {
     get: (target : Function, prop: string) =>
-        ((next : Promise<JSHandle>) => 
+        ((next : FutureHandle) => 
             new Proxy(create(next.then((handle : JSHandle) => handle.getProperty(prop)), next), handler))
             (privates.get(target).next),
 
-    apply: async (target : Function, thisArg : any, args?: any) => {
+    apply: async (target: PuppeteerHandleWrapper, thisArg : any, args?: any) => {
         const {next, context} = privates.get(target)
         const handle = await next
         return handle.executionContext().evaluate((fn, thisArg, args) => fn.apply(thisArg, args), handle, await context, args)
