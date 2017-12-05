@@ -1,6 +1,7 @@
 {
   "src": ["src/**/*.ts", "ts/refs.d.ts"],
   "compilerOptions": {
+    "outDir": "dist",
     "module": "commonjs",
     "target": "es6",
     "baseUrl": ".",

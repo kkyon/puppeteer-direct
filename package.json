@@ -1,11 +1,11 @@
 {
-  "name": "puppeteer-handle-wrapper",
+  "name": "puppeteer-direct",
   "version": "1.0.0",
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
     "watch": "npm run webpack -- --progress --watch",
-    "build": "webpack -p",
+    "build": "tsc --rootDir src --lib ES2017 --outDir dist src/*.ts",
     "test": "mocha",
     "coverage": "nyc -n=src/*/main/** -r html -e .ts npm test"
   },
@@ -20,8 +20,7 @@
     "ts-loader": "^3.2.0",
     "ts-node": "^3.3.0",
     "tsconfig-paths": "^2.4.0",
-    "typescript": "^2.6.2",
-    "webpack": "^3.10.0"
+    "typescript": "^2.6.2"
   },
   "dependencies": {
     "uuid": "^3.1.0"
