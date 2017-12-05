@@ -27,14 +27,12 @@ describe('puppeteer-handle', () => {
 
     it('should enable arguments', async() => {
         const handle = ev(() => ({add: (a, b) => a + b}))
-
         expect(await handle.add(1, 4)).to.equal(5)
     })
 
 
     it('should enable async functions', async() => {
         const handle = ev(() => ({later: () => Promise.resolve(4)}))
-
         expect(await handle.later()).to.equal(4)
     })
 
@@ -46,26 +44,22 @@ describe('puppeteer-handle', () => {
 
     it('shoult evaluate numbers', async() => {
         const handle = ev(() => ({num: 789}))
-
         expect(await handle.num).to.equal(789)
     })
 
     it('shoult evaluate objects', async() => {
         const handle = ev(() => ({a: {b: 'something'}}))
-
         expect(await handle.a).to.deep.equal({b: 'something'})
     })
 
     it('should allow for a "then" property', async() => {
         const handle = ev(() => ({then: 9}))
-
         expect(await handle.then).to.equal(9)
     })
 
 
     it('should allow functions in main object', async() => {
         const handle = ev(() => ({a: () => 12}))
-
         expect(await handle.a()).to.equal(12)
     })
 
@@ -91,7 +85,6 @@ describe('puppeteer-handle', () => {
 
     it('should allow a callback in any arg', async() => {
         const handle = ev(() => ({add: (num, cb) => cb(num + 1)}))
-
         const value = await new Promise(resolve => handle.add(1, resolve))
         expect(value).to.equal(2)
     })
