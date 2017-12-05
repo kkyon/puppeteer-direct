@@ -1,4 +1,4 @@
-import {JSHandle} from 'puppeteer'
+import {JSHandle, Page} from 'puppeteer'
 type FutureHandle = Promise<JSHandle>
 type DirectJSHandle = Function
 
@@ -50,6 +50,10 @@ const handler : ProxyHandler<DirectJSHandle> = {
     }
 }
 
-export function createDirectJSHandle(handle: JSHandle | FutureHandle) : any {
+export function directJSHandle(handle: JSHandle | FutureHandle) : any {
     return new Proxy(create(null, (handle instanceof Promise) ? handle: Promise.resolve(handle)), handler)
+}
+
+export function directPageHandle(page: Page) {
+    return directJSHandle(page.evaluateHandle('window'))
 }
