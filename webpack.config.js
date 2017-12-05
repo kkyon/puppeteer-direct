@@ -5,7 +5,7 @@ const path = require('path');
 module.exports = {
     entry: path.resolve('src/index.ts'),
     output: {
-        filename: '[name].js',
+        filename: 'index.js',
         path: path.join(__dirname, 'dist'),
         libraryTarget: 'commonjs'
     },
@@ -18,7 +18,7 @@ module.exports = {
             // all files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'
             { test: /\.ts$/, loader: 'ts-loader?'+JSON.stringify({
                 compilerOptions: {
-                    lib: ['es6', 'ES2015.Promise'],
+                    lib: ['ESNext', 'ES2015.Promise'],
                     types: ['node', 'mocha'],
                     target: 'es5'
                 }

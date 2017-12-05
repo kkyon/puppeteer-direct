@@ -35,4 +35,56 @@ describe('puppeteer-handle', () => {
         const pHandle = createHandle(handle)
         expect(await pHandle.later()).to.equal(4)
     })
+
+    it('shoult evaluate strings', async() => {
+        const handle = await this.page.evaluateHandle(() => ({str: '123'}))
+        const pHandle = createHandle(handle)
+        expect(await pHandle.str).to.equal('123')  
+    })
+
+    it('shoult evaluate numbers', async() => {
+        const handle = await this.page.evaluateHandle(() => ({num: 789}))
+        const pHandle = createHandle(handle)
+        expect(await pHandle.num).to.equal(789)  
+    })
+
+    it('shoult evaluate objects', async() => {
+        const handle = await this.page.evaluateHandle(() => ({a: {b: 'something'}}))
+        const pHandle = createHandle(handle)
+        expect(await pHandle.a).to.deep.equal({b: 'something'})  
+    })
+
+    it('should allow for a "then" property', async() => {
+        const handle = await this.page.evaluateHandle(() => ({then: 9}))
+        const pHandle = createHandle(handle)
+        expect(await pHandle.then).to.equal(9)      
+    })
+
+
+    it('should allow functions in main object', async() => {
+        const handle = await this.page.evaluateHandle(() => ({a: () => 12}))
+        const pHandle = createHandle(handle)
+        expect(await pHandle.a()).to.equal(12)      
+    })
+
+    it('should allow a callback', async() => {
+        const handle = await this.page.evaluateHandle(() => ({callback: cb => cb('yes')}))
+        const pHandle = createHandle(handle)
+        const value = await new Promise(resolve => pHandle.callback(resolve))
+        expect(value).to.equal('yes')
+    })
+
+    it('should allow a callback in any arg', async() => {
+        const handle = await this.page.evaluateHandle(() => ({add: (num, cb) => cb(num + 1)}))
+        const pHandle = createHandle(handle)
+        const value = await new Promise(resolve => pHandle.add(1, resolve))
+        expect(value).to.equal(2)
+    })
+
+    it('should work on the main handle', async() => {
+        const handle = await this.page.evaluateHandle(() => 'root')
+        const pHandle = createHandle(handle)
+        const value = await pHandle
+        expect(value).to.equal('root')
+    })
 })
