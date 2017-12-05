@@ -54,6 +54,6 @@ export function directJSHandle(handle: JSHandle | FutureHandle) : any {
     return new Proxy(create(null, (handle instanceof Promise) ? handle: Promise.resolve(handle)), handler)
 }
 
-export function directPageHandle(page: Page) {
+export function getWindowHandle(page: Page) {
     return directJSHandle(page.evaluateHandle('window'))
 }
