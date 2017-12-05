@@ -1,6 +1,6 @@
 import {JSHandle} from 'puppeteer'
 type FutureHandle = Promise<JSHandle>
-type PuppeteerHandleWrapper = Function
+type DirectJSHandle = Function
 
 class Privates {
     prop: string
@@ -8,21 +8,21 @@ class Privates {
     next: FutureHandle
 }
 
-const privates = new WeakMap<PuppeteerHandleWrapper, Privates>()
+const privates = new WeakMap<DirectJSHandle, Privates>()
 
 function create(prop: string, next : FutureHandle, context: FutureHandle = Promise.resolve(null)) {
-    const fakeFunction : PuppeteerHandleWrapper = () => {}
+    const fakeFunction : DirectJSHandle = () => {}
     privates.set(fakeFunction, {prop, context, next})
     return fakeFunction
 }
 
-const handler : ProxyHandler<PuppeteerHandleWrapper> = {
+const handler : ProxyHandler<DirectJSHandle> = {
     get(target : Function, prop: string) {
         const next = privates.get(target).next
         return new Proxy(create(prop, next.then((handle : JSHandle) => handle.getProperty(prop)), next), handler)
     },
 
-    apply: async (target: PuppeteerHandleWrapper, thisArg : any, args?: any) => {
+    apply: async (target: DirectJSHandle, thisArg : any, args?: any) => {
         const {next, context, prop} = privates.get(target)
         const handle = await next
         const parentHandle = await context
@@ -50,6 +50,6 @@ const handler : ProxyHandler<PuppeteerHandleWrapper> = {
     }
 }
 
-export function createHandle(handle: JSHandle) : any {
-    return new Proxy(create(null, Promise.resolve(handle)), handler)
+export function createDirectJSHandle(handle: JSHandle | FutureHandle) : any {
+    return new Proxy(create(null, (handle instanceof Promise) ? handle: Promise.resolve(handle)), handler)
 }
