@@ -2,58 +2,74 @@ import {JSHandle, Page} from 'puppeteer'
 type FutureHandle = Promise<JSHandle>
 type DirectJSHandle = Function
 
-class Privates {
+class PathEntry {
     prop: string
-    context: FutureHandle
-    next: FutureHandle
+    args?: any[]
+}
+
+class Privates {
+    root: FutureHandle
+    path: PathEntry[]
 }
 
 const privates = new WeakMap<DirectJSHandle, Privates>()
 
-function create(prop: string, next : FutureHandle, context: FutureHandle = Promise.resolve(null)) {
+function create(data: Privates) {
     const fakeFunction : DirectJSHandle = () => {}
-    privates.set(fakeFunction, {prop, context, next})
-    return fakeFunction
+    privates.set(fakeFunction, data)
+    return new Proxy(fakeFunction, handler)
 }
 
 const handler : ProxyHandler<DirectJSHandle> = {
     get(target : Function, prop: string) {
-        const next = privates.get(target).next
-        return new Proxy(create(prop, next.then((handle : JSHandle) => handle.getProperty(prop)), next), handler)
+        const data = privates.get(target);
+        return create({root: data.root, path: [...data.path, {prop}]})
     },
 
-    apply: async (target: DirectJSHandle, thisArg : any, args?: any) => {
-        const {next, context, prop} = privates.get(target)
-        const handle = await next
-        const parentHandle = await context
-
-        const firstArg = args[0]
+    apply: (target: DirectJSHandle, thisArg : any, args?: any) => {
+        const {root, path} = privates.get(target)
+        const {prop} = path[path.length - 1]
         const isFunction = a => typeof a === 'function'
-        const execContext = handle.executionContext()
-        const evaluate = execContext.evaluate.bind(execContext)
+        const indexOfCallback = args.findIndex(isFunction);
+        Object.assign(path[path.length - 1], {args, indexOfCallback});
 
-        const indexOfCallback = Array.prototype.findIndex.call(args, isFunction)
-        if (prop === 'then' && indexOfCallback === 0) {
-            return args[0](await parentHandle.jsonValue())
+        if (indexOfCallback < 0) {
+            return create({root, path: [...path.slice(0, -1), {args: args || [], prop}]})
         }
 
-        if (indexOfCallback > -1) {
-            return evaluate((fn, thisArg, args, indexOfCallback) => {
-                return new Promise(resolve => {
-                    args.splice(indexOfCallback, indexOfCallback + 1, resolve)
-                    fn.apply(thisArg, args)
-                })    
-            }, handle, parentHandle, args, indexOfCallback).then(args[indexOfCallback])
-        }
-
-        return evaluate((fn, thisArg, args) => fn.apply(thisArg, args), handle, parentHandle, args)
+        (async() => {
+            const handle = await root
+            const value = await handle.executionContext().evaluate((root, path) => {
+                return new Promise((resolve, reject) => {
+                    function execStep(object, entry) {
+                        if (entry.prop === 'then' && entry.indexOfCallback === 0) {
+                            resolve(object);
+                            return;
+                        }
+                        var value = object[entry.prop];
+                        if (entry.args && entry.indexOfCallback >= 0) {
+                            entry.args[entry.indexOfCallback] = resolve;
+                        }
+                        return entry.args ? value.apply(object, entry.args) : value;
+                    }
+        
+                    function execPath(subroot, subpath) {
+                        return subpath.length ? execPath(execStep(subroot, subpath[0]), subpath.slice(1)) : subroot;
+                    }
+        
+                    execPath(root, path);
+                });
+            },  handle, path);
+    
+            args[indexOfCallback](value);    
+        })()
     }
 }
 
 export function directJSHandle(handle: JSHandle | FutureHandle) : any {
-    return new Proxy(create(null, (handle instanceof Promise) ? handle: Promise.resolve(handle)), handler)
+    return create({root: handle instanceof Promise ? handle : Promise.resolve(handle), path: []})
 }
 
-export function getWindowHandle(page: Page) {
+export function getWindowHandle(page: Page) : any {
     return directJSHandle(page.evaluateHandle('window'))
 }

@@ -63,6 +63,11 @@ describe('puppeteer-handle', () => {
         expect(await handle.a()).to.equal(12)
     })
 
+    it('should allow nested function calling', async() => {
+        const handle = ev(() => ({abc: a => ({m: b => a + b + 3})}))
+        expect(await handle.abc(1).m(2)).to.equal(6)
+    })
+
     it('should work with a promise', async() => {
         const handle = ev(() => ({a: () => 32}))
         expect(await handle.a()).to.equal(32)
