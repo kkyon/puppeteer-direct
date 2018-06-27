@@ -1,7 +1,7 @@
 
 # puppeteer-direct
 
-puppeteer-direct is a small library that allows easy access to in-browser JS when using[puppeteer](https://github.com/GoogleChrome/puppeteer/).
+puppeteer-direct is a small library that allows easy access to in-browser JS when using [puppeteer](https://github.com/GoogleChrome/puppeteer/).
 
 ## The problem it comes to solve
 Puppeteer (headless-chrome for node.js) gives access to JS inside the browser, using [JSHandles](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#class-jshandle). However the code that runs them is a bit cumbersome, you keep have to separating between the node context and the browser context.
